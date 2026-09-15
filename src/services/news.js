@@ -54,6 +54,19 @@ export async function signOut() {
   if (supabase) await supabase.auth.signOut();
 }
 
+export async function requestPasswordReset(email) {
+  if (!supabase) throw new Error('Supabase aún no está configurado.');
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw error;
+}
+
+export async function updatePassword(password) {
+  if (!supabase) throw new Error('Supabase aún no está configurado.');
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
 async function optimizeImage(file) {
   if (!file) return null;
   if (!file.type.startsWith('image/')) throw new Error('Selecciona un archivo de imagen válido.');

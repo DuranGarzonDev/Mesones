@@ -1,13 +1,16 @@
 import './styles.css';
 import { createIcons, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, FileText, GraduationCap, HeartHandshake, Image, Landmark, LogIn, LogOut, Mail, MapPin, Menu, Newspaper, Phone, Quote, Send, ShieldCheck, Sparkles, Sprout, Upload, Users, X } from 'lucide';
 import { categories, school } from './config.js';
-import { getCurrentEditor, listPublishedNews, publishArticle, signIn, signOut } from './services/news.js';
-import { isSupabaseConfigured } from './lib/supabase.js';
+import { getCurrentEditor, listPublishedNews, publishArticle, requestPasswordReset, signIn, signOut, updatePassword } from './services/news.js';
+import { isSupabaseConfigured, supabase } from './lib/supabase.js';
 
 const icons = { ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, FileText, GraduationCap, HeartHandshake, Image, Landmark, LogIn, LogOut, Mail, MapPin, Menu, Newspaper, Phone, Quote, Send, ShieldCheck, Sparkles, Sprout, Upload, Users, X };
 let articles = [];
 let activeCategory = 'todas';
 let currentEditor = null;
+const initialAuthType = new URLSearchParams(window.location.hash.slice(1)).get('type')
+  || new URLSearchParams(window.location.search).get('type');
+let passwordSetupRequired = initialAuthType === 'invite' || initialAuthType === 'recovery';
 
 const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
 const formatDate = (value) => new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value));
@@ -172,8 +175,10 @@ function renderEditor() {
   const container = document.querySelector('#editorContent');
   if (!isSupabaseConfigured) {
     container.innerHTML = `<div class="modal-header"><span class="modal-icon">${icon('shield-check')}</span><p class="eyebrow">Configuración pendiente</p><h2>Activa el módulo editorial</h2><p>El portal está listo. Configura las variables públicas de Supabase y ejecuta la migración incluida para habilitar el acceso seguro.</p></div><div class="setup-note"><code>VITE_SUPABASE_URL</code><code>VITE_SUPABASE_PUBLISHABLE_KEY</code></div>`;
+  } else if (passwordSetupRequired && currentEditor) {
+    container.innerHTML = `<div class="modal-header"><span class="modal-icon">${icon('shield-check')}</span><p class="eyebrow">Activación segura</p><h2>Define tu contraseña</h2><p>Crea la contraseña que usarás para ingresar al panel editorial.</p></div><form id="passwordForm" class="form"><label>Nueva contraseña<input name="password" type="password" autocomplete="new-password" minlength="10" required /></label><label>Confirmar contraseña<input name="confirmation" type="password" autocomplete="new-password" minlength="10" required /></label><p class="form-help">Usa al menos 10 caracteres y evita contraseñas reutilizadas.</p><p class="form-error" id="passwordError"></p><button class="button button-primary" type="submit">Guardar contraseña ${icon('arrow-right', 18)}</button></form>`;
   } else if (!currentEditor) {
-    container.innerHTML = `<div class="modal-header"><span class="modal-icon">${icon('log-in')}</span><p class="eyebrow">Área restringida</p><h2>Acceso editorial</h2><p>Ingresa con una cuenta autorizada por la institución.</p></div><form id="loginForm" class="form"><label>Correo institucional<input name="email" type="email" autocomplete="username" required /></label><label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required /></label><p class="form-error" id="loginError"></p><button class="button button-primary" type="submit">Ingresar ${icon('arrow-right', 18)}</button></form>`;
+    container.innerHTML = `<div class="modal-header"><span class="modal-icon">${icon('log-in')}</span><p class="eyebrow">Área restringida</p><h2>Acceso editorial</h2><p>Ingresa con una cuenta autorizada por la institución.</p></div><form id="loginForm" class="form"><label>Correo institucional<input name="email" type="email" autocomplete="username" required /></label><label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required /></label><p class="form-error" id="loginError"></p><button class="button button-primary" type="submit">Ingresar ${icon('arrow-right', 18)}</button><button class="text-button" id="resetPasswordButton" type="button">¿Olvidaste tu contraseña?</button></form>`;
   } else {
     container.innerHTML = `<div class="editor-head"><div><p class="eyebrow">Panel editorial</p><h2>Nueva noticia</h2><p>Sesión de ${escapeHtml(currentEditor.profile.display_name)}</p></div><button class="button button-small button-outline" id="logoutButton">${icon('log-out', 17)} Salir</button></div><form id="articleForm" class="form"><div class="form-row"><label>Título<input name="title" maxlength="120" minlength="8" required /></label><label>Categoría<select name="category" required>${categories.map((category) => `<option value="${category.value}">${category.label}</option>`).join('')}</select></label></div><label>Resumen<textarea name="excerpt" rows="2" maxlength="240" required></textarea></label><label>Contenido<textarea name="content" rows="8" minlength="30" required></textarea></label><label class="upload-field">${icon('upload')}<span><strong>Imagen de portada</strong><small>JPG, PNG o WebP · máximo 8 MB</small></span><input name="image" type="file" accept="image/jpeg,image/png,image/webp" /></label><div class="form-actions"><label>Estado<select name="status"><option value="published">Publicar ahora</option><option value="draft">Guardar borrador</option></select></label><button class="button button-primary" type="submit">${icon('send', 18)} Guardar noticia</button></div><p class="form-error" id="articleError"></p></form>`;
   }
@@ -204,6 +209,28 @@ document.addEventListener('click', async (event) => {
   if (target.closest('#logoutButton')) {
     await signOut(); currentEditor = null; renderEditor(); toast('Sesión cerrada correctamente.');
   }
+
+  if (target.closest('#resetPasswordButton')) {
+    const form = document.querySelector('#loginForm');
+    const email = form?.elements.email.value.trim();
+    const error = form?.querySelector('#loginError');
+    if (!email) {
+      error.textContent = 'Escribe primero el correo de tu cuenta.';
+      form?.elements.email.focus();
+      return;
+    }
+    const button = target.closest('#resetPasswordButton');
+    button.disabled = true;
+    error.textContent = '';
+    try {
+      await requestPasswordReset(email);
+      toast('Revisa tu correo para restablecer la contraseña.', 'success');
+    } catch {
+      error.textContent = 'No se pudo enviar el enlace. Verifica el correo e intenta nuevamente.';
+    } finally {
+      button.disabled = false;
+    }
+  }
 });
 
 document.addEventListener('submit', async (event) => {
@@ -213,6 +240,28 @@ document.addEventListener('submit', async (event) => {
     button.disabled = true; button.textContent = 'Verificando…'; error.textContent = '';
     try { const values = new FormData(form); currentEditor = await signIn(values.get('email'), values.get('password')); renderEditor(); toast('Acceso concedido.', 'success'); }
     catch { error.textContent = 'No fue posible iniciar sesión. Verifica tus datos y permisos.'; button.disabled = false; button.innerHTML = `Ingresar ${icon('arrow-right', 18)}`; createIcons({ icons }); }
+  }
+
+  if (event.target.id === 'passwordForm') {
+    event.preventDefault();
+    const form = event.target; const button = form.querySelector('button'); const error = form.querySelector('#passwordError'); const values = new FormData(form);
+    const password = values.get('password');
+    error.textContent = '';
+    if (password !== values.get('confirmation')) {
+      error.textContent = 'Las contraseñas no coinciden.';
+      return;
+    }
+    button.disabled = true; button.textContent = 'Guardando…';
+    try {
+      await updatePassword(password);
+      passwordSetupRequired = false;
+      window.history.replaceState({}, document.title, window.location.pathname);
+      renderEditor();
+      toast('Contraseña guardada. Tu cuenta está activa.', 'success');
+    } catch {
+      error.textContent = 'No se pudo guardar la contraseña. Solicita un enlace nuevo e intenta otra vez.';
+      button.disabled = false; button.innerHTML = `Guardar contraseña ${icon('arrow-right', 18)}`; createIcons({ icons });
+    }
   }
 
   if (event.target.id === 'articleForm') {
@@ -235,6 +284,19 @@ menuButton.addEventListener('click', () => {
 });
 document.querySelectorAll('#navLinks a').forEach((link) => link.addEventListener('click', () => document.querySelector('#navLinks').classList.remove('open')));
 document.querySelectorAll('dialog').forEach((dialog) => dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); }));
+
+if (supabase) {
+  supabase.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') passwordSetupRequired = true;
+    if (!passwordSetupRequired || !['INITIAL_SESSION', 'SIGNED_IN', 'PASSWORD_RECOVERY'].includes(event)) return;
+    window.setTimeout(async () => {
+      currentEditor = await getCurrentEditor();
+      renderEditor();
+      const modal = document.querySelector('#editorModal');
+      if (currentEditor && !modal.open) modal.showModal();
+    }, 0);
+  });
+}
 
 try { articles = await listPublishedNews(); renderNews(); }
 catch { document.querySelector('#newsGrid').innerHTML = '<div class="empty-state">No fue posible cargar las noticias. Intenta nuevamente más tarde.</div>'; }
