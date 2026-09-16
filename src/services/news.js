@@ -16,6 +16,18 @@ export async function listPublishedNews() {
   return data.length ? data : fallbackNews;
 }
 
+export async function listOwnArticles(editor) {
+  if (!supabase || !editor) throw new Error('Debes iniciar sesión como editor.');
+  const { data, error } = await supabase
+    .from('articles')
+    .select('id,title,excerpt,content,category,status,published_at,image_url,updated_at')
+    .eq('author_id', editor.user.id)
+    .neq('status', 'archived')
+    .order('updated_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
 export async function signIn(email, password) {
   if (!supabase) throw new Error('Supabase aún no está configurado.');
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -119,6 +131,51 @@ export async function publishArticle(values, imageFile, editor) {
       status: values.status,
       published_at: values.status === 'published' ? new Date().toISOString() : null,
     })
+    .select('id')
+    .single();
+
+  if (error) {
+    if (imagePath) await supabase.storage.from('news-images').remove([imagePath]);
+    throw error;
+  }
+  return data;
+}
+
+export async function updateArticle(id, values, imageFile, editor, previousArticle) {
+  if (!supabase || !editor) throw new Error('Debes iniciar sesión como editor.');
+
+  let imagePath = null;
+  let imageUrl = previousArticle.image_url;
+  const imageBlob = await optimizeImage(imageFile);
+  if (imageBlob) {
+    imagePath = `${editor.user.id}/${crypto.randomUUID()}.webp`;
+    const { error: uploadError } = await supabase.storage
+      .from('news-images')
+      .upload(imagePath, imageBlob, { contentType: 'image/webp', upsert: false });
+    if (uploadError) throw uploadError;
+    imageUrl = supabase.storage.from('news-images').getPublicUrl(imagePath).data.publicUrl;
+  }
+
+  const changes = {
+    title: values.title,
+    excerpt: values.excerpt,
+    content: values.content,
+    category: values.category,
+    status: values.status,
+    published_at: values.status === 'published'
+      ? (previousArticle.status === 'published' ? previousArticle.published_at : new Date().toISOString())
+      : null,
+  };
+  if (imagePath) {
+    changes.image_url = imageUrl;
+    changes.image_path = imagePath;
+  }
+
+  const { data, error } = await supabase
+    .from('articles')
+    .update(changes)
+    .eq('id', id)
+    .eq('author_id', editor.user.id)
     .select('id')
     .single();
 

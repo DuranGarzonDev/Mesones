@@ -7,7 +7,9 @@ Portal institucional y de noticias de la **Institución Educativa Rural Los Meso
 - Diseño responsive y accesible orientado a una entidad educativa rural.
 - Noticias públicas por categoría y lectura en detalle.
 - Panel editorial con autenticación por correo y contraseña.
-- Publicación de noticias y carga optimizada de imágenes.
+- Publicación, edición y gestión de borradores propios, con carga optimizada de imágenes.
+- Menú de perfil editorial visible al iniciar sesión.
+- Sección WebColegios preparada para incorporar el enlace oficial.
 - PostgreSQL, Auth y Storage mediante Supabase.
 - Seguridad con Row Level Security (RLS): el público solo lee publicaciones; únicamente editores autorizados escriben.
 - Despliegue automatizado en GitHub Pages.
@@ -23,6 +25,8 @@ npm run dev
 ```
 
 Sin variables de Supabase, el sitio funciona en modo demostración de solo lectura. Para activar el módulo editorial, sigue [la guía de Supabase](supabase/README.md).
+
+Para habilitar el acceso a WebColegios, coloca su URL HTTPS oficial en `school.webColegiosUrl` dentro de `src/config.js`. Mientras esté vacía, el botón permanece deshabilitado y no dirige a una dirección provisional.
 
 ## Variables de entorno
 

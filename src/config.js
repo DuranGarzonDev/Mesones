@@ -6,6 +6,7 @@ export const school = {
   email: 'cerlosmesones@gmail.com',
   phone: '317 618 4560',
   rector: 'Edwar Antonio Gómez Álvarez',
+  webColegiosUrl: '',
 };
 
 export const categories = [
