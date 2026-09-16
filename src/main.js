@@ -1,4 +1,5 @@
 import './styles.css';
+import packageInfo from '../package.json';
 import { createIcons, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, CircleUserRound, FileText, GraduationCap, HeartHandshake, Image, Landmark, LogIn, LogOut, Mail, MapPin, Menu, Newspaper, Phone, Quote, Send, ShieldCheck, Sparkles, Sprout, Upload, Users, X } from 'lucide';
 import { categories, school } from './config.js';
 import { getCurrentEditor, listOwnArticles, listPublishedNews, publishArticle, requestPasswordReset, signIn, signOut, updateArticle, updatePassword } from './services/news.js';
@@ -153,11 +154,11 @@ document.querySelector('#app').innerHTML = `
 
   <footer class="footer">
     <div class="container footer-grid">
-      <div class="footer-brand"><img src="./assets/logo.png" alt="Escudo de ${school.shortName}" /><div><strong>${school.name}</strong><p>Educación rural con calidad, inclusión y compromiso social.</p></div></div>
+      <div class="footer-brand"><img src="./assets/logo_blanco.png" alt="Escudo de ${school.shortName}" /><div><strong>${school.name}</strong><p>Educación rural con calidad, inclusión y compromiso social.</p></div></div>
       <div><h3>Contacto</h3><a href="mailto:${school.email}">${school.email}</a><a href="tel:+573176184560">+57 ${school.phone}</a><span>${school.address}</span></div>
       <div><h3>Navegación</h3><a href="#noticias">Noticias</a><a href="#institucion">Institución</a><a href="#servicios">Servicios</a></div>
     </div>
-    <div class="container footer-bottom"><span>© ${new Date().getFullYear()} ${school.shortName}</span><span>${school.location}, Colombia</span></div>
+    <div class="container footer-bottom"><span>© ${new Date().getFullYear()} ${school.shortName}</span><div class="footer-meta"><span>${school.location}, Colombia</span><span>Versión ${packageInfo.version}</span></div></div>
   </footer>
 
   <dialog class="modal article-modal" id="articleModal"><button class="modal-close" data-close="articleModal" aria-label="Cerrar">${icon('x')}</button><div id="articleDetail"></div></dialog>
