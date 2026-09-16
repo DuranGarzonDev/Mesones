@@ -38,7 +38,7 @@ document.querySelector('#app').innerHTML = `
     </div>
     <nav class="nav container" aria-label="Navegación principal">
       <a class="brand" href="#inicio" aria-label="Inicio — ${school.name}">
-        <img src="./assets/logo.png" alt="Escudo de la Institución Educativa Rural Los Mesones" />
+        <span class="brand-mark"><img src="./assets/logo.png" alt="Escudo de la Institución Educativa Rural Los Mesones" /></span>
         <span><strong>Los Mesones</strong><small>Institución Educativa Rural</small></span>
       </a>
       <button class="icon-button mobile-menu-button" id="menuButton" aria-label="Abrir menú" aria-expanded="false">${icon('menu')}</button>

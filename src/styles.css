@@ -17,7 +17,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 92px; }
+html { scroll-behavior: smooth; scroll-padding-top: 116px; }
 body { margin: 0; color: var(--ink); background: var(--paper); font-family: var(--sans); line-height: 1.6; }
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -32,9 +32,10 @@ img { display: block; max-width: 100%; }
 .utility-inner { height: 34px; display: flex; align-items: center; justify-content: space-between; }
 .utility-inner span, .utility-inner a { display: inline-flex; gap: .45rem; align-items: center; }
 .site-header { position: relative; z-index: 30; background: rgba(255, 253, 248, .96); border-bottom: 1px solid rgba(18,55,42,.1); }
-.nav { height: 82px; display: flex; align-items: center; justify-content: space-between; }
+.nav { min-height: 96px; padding-block: 10px; display: flex; align-items: center; justify-content: space-between; }
 .brand { display: flex; gap: .75rem; align-items: center; }
-.brand img { width: 58px; height: 64px; object-fit: contain; }
+.brand-mark { flex: 0 0 76px; width: 76px; height: 76px; padding: 6px; display: grid !important; place-items: center; }
+.brand-mark img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .brand span { display: grid; line-height: 1.12; }
 .brand strong { font: 700 1.3rem var(--serif); color: var(--forest-900); }
 .brand small { margin-top: .25rem; color: var(--muted); font-size: .66rem; text-transform: uppercase; letter-spacing: .12em; }
@@ -213,7 +214,7 @@ blockquote p { margin: .4rem 0 0; font: 600 1.08rem var(--serif); }
 
 @media (max-width: 960px) {
   .mobile-menu-button { display: inline-grid; }
-  .nav-links { position: absolute; left: 0; right: 0; top: 116px; display: none; padding: 1.25rem 20px 1.5rem; flex-direction: column; align-items: stretch; background: var(--paper); border-bottom: 1px solid var(--line); box-shadow: var(--shadow); }
+  .nav-links { position: absolute; left: 0; right: 0; top: 130px; display: none; padding: 1.25rem 20px 1.5rem; flex-direction: column; align-items: stretch; background: var(--paper); border-bottom: 1px solid var(--line); box-shadow: var(--shadow); }
   .nav-links.open { display: flex; }
   .editor-nav, .profile-controls { align-items: stretch; }
   .profile-menu { left: 0; right: auto; }
@@ -229,11 +230,11 @@ blockquote p { margin: .4rem 0 0; font: 600 1.08rem var(--serif); }
   .container { width: min(100% - 28px, 1180px); }
   .utility-inner { justify-content: center; }
   .utility-inner a { display: none; }
-  .nav { height: 70px; }
-  .brand img { width: 47px; height: 54px; }
+  .nav { min-height: 82px; padding-block: 9px; }
+  .brand-mark { flex-basis: 64px; width: 64px; height: 64px; padding: 5px; }
   .brand strong { font-size: 1.05rem; }
   .brand small { font-size: .55rem; }
-  .nav-links { top: 104px; }
+  .nav-links { top: 116px; }
   .profile-controls { justify-content: space-between; }
   .profile-menu { left: auto; right: 0; }
   .hero { min-height: 650px; }
